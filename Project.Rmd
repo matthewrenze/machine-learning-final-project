@@ -44,9 +44,9 @@ testing <- read.csv("pml-testing.csv")
 ## Transform and Clean the Data
 First, we will remove the first seven columns since they contain metadata rather than sensor data. These variables will leak information that will increase the prediction accuracy of our model in unrealistic ways. So they should be excluded to ensure our predictions are being done only on sensor data.
 ```{r}
-training.all <- training.all[, -(1:6)]
+training.all <- training.all[, -(1:7)]
 
-testing <- testing[, -(1:6)]
+testing <- testing[, -(1:7)]
 ```
 
 Next, we will remove variables with nearly zero variance since they have little predictive power relative to the complexity they add to our model.
@@ -60,7 +60,7 @@ testing <- testing[, -near.zero.var]
 
 Finally, we will remove variables that contain 95% or more NA values since they provide little predictive power relative to the complexity they add to our model.
 ```{r}
-mostly.na <- sapply(training.all, function(x) mean(is.na(x))) > 0.95
+mostly.na <- sapply(training.all, function(x) mean(is.na(x))) >= 0.95
 
 training.all <- training.all[, mostly.na == FALSE]
 
@@ -85,7 +85,7 @@ Finally, we will create our validation set
 validation <- training.all[-index, ]
 ```
 
-## Create a Decision Tree Classifier
+## Create a Decision-Tree Classifier
 
 We will first create a decision-tree classifier to see what type of accuracy the model will provide. We chose this algorithm to start with because it produces models that are simple and easy to interpret.
 
@@ -113,7 +113,7 @@ tree.matrix <- confusionMatrix(
 print(tree.matrix)
 ```
 
-As we can see from the confusion matrix, the accuracy of our decision tree model is only `tree.matrix$overall[1]`. This is a low accuracy so we will need to try a more complex model to see if our prediction accuracy improves.
+As we can see from the confusion matrix, the accuracy of our decision tree model is only `r format(tree.matrix$overall[1], 2)`. This is a low accuracy so we will need to try a more complex model to see if our prediction accuracy improves.
 
 Finally, before we attempt to create a more powerful model, let's visualize the decision tree to see which variables were used in the model.
 ```{r, out.width='1000px'}
@@ -122,10 +122,10 @@ plot(tree.model$finalModel)
 text(tree.model$finalModel)
 ```
 
-## Create a Random-forest Classifier
+## Create a Random-Forest Classifier
 Now we will attempt to create a more powerful model in attempt to increase our prediction accuracy. We will use a random-forest classifier since it provides significantly more power by using a series of decision-tree classifiers as an ensemble.
 
-We will manually set the training control to specify the use of k-fold cross-validation, with k = 5 folds. This number was chosen to reduce the number of iterations necessary to construct our model relative to the potential increase in prediction accuracy of a larger k.
+We will manually set the training control to specify the use of k-fold cross validation, with k = 5 folds. This number was chosen to reduce the number of iterations necessary to construct our model relative to the potential increase in prediction accuracy of a larger k.
 
 First, we will create a random-forest classifier.
 ```{r, warning=FALSE, message=FALSE}
@@ -150,9 +150,11 @@ Then, we will create a confusion matrix to assess our new model's accuracy.
 forest.matrix <- confusionMatrix(
   data = forest.predictions,
   reference = validation$classe)
+
+print(forest.matrix)
 ```
 
-As we can see from our results, the random-forest classifier has an accuracy of `forest.matrix$overall[1]`, which is significantly better than our decision-tree classifier.
+As we can see from our results, the random-forest classifier has an accuracy of `r format(forest.matrix$overall[1], 2)`, which is significantly better than our decision-tree classifier.
 
 This model's prediction accuracy should be sufficient, so we will use it to make our final predictions.
 
@@ -181,6 +183,6 @@ final.predictions <- predict(
 print(final.predictions)
 ```
 
-These results were submitted to the Coursera website for verification. As a result of this verification process we know that our accuracy of our predictions on the test set was 100%. 
+These results were submitted to the Coursera website for verification. As a result of this verification process we know that the accuracy of our predictions on the test set was 100%. 
 
 While we would typically expect our in-sample error rate to be lower than our out-of-sample error rate, in this case, our out-of-sample error rate was lower than our in-sample error rate. This is likely due to the small sample size of our test data set.
